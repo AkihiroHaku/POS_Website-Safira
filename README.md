@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+Saya M Khoirul Anwar (101230107) adalah mahasiswa ITSNU Pekalongan Prodi Teknologi Informasi 
+
 ## Getting Started
 
 First, run the development server:
