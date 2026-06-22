@@ -47,3 +47,7 @@ next-env.d.ts
 # build verification folders
 .next-build-verify/
 .next-build-verify-notifications/
+
+# Android / Capacitor (web-only repo)
+/android/
+capacitor.config.json
