@@ -1,0 +1,124 @@
+# ============================================================
+# CI — Auto Debug & Code Quality Check
+# Runs on every push & pull request to main
+# Checks: TypeScript types · ESLint · Next.js build
+# ============================================================
+
+name: 🔍 CI — Auto Debug
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel duplicate runs when a new push comes in
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────
+  # JOB 1: TypeScript Type Check
+  # ──────────────────────────────────────────────
+  type-check:
+    name: 🔷 TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+        # ↑ Deteksi semua type error tanpa compile
+
+  # ──────────────────────────────────────────────
+  # JOB 2: ESLint — Code Quality
+  # ──────────────────────────────────────────────
+  lint:
+    name: 🔶 ESLint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+        # ↑ Report semua linting error & warning
+
+  # ──────────────────────────────────────────────
+  # JOB 3: Next.js Build Check
+  # ──────────────────────────────────────────────
+  build:
+    name: 🏗️ Build Check
+    runs-on: ubuntu-latest
+    needs: [type-check, lint]
+    # Hanya build jika type-check & lint lolos
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          # Dummy env agar build tidak crash karena .env kosong
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Upload build artifact (opsional)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: nextjs-build
+          path: .next/
+          retention-days: 3
+
+  # ──────────────────────────────────────────────
+  # JOB 4: Summary Report
+  # ──────────────────────────────────────────────
+  summary:
+    name: 📋 Debug Summary
+    runs-on: ubuntu-latest
+    needs: [type-check, lint, build]
+    if: always()
+    steps:
+      - name: Report status
+        run: |
+          echo "## 🔍 Auto Debug Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔷 TypeScript | ${{ needs.type-check.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔶 ESLint     | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗️ Build      | ${{ needs.build.result == 'success' && '✅ Passed' || needs.build.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
