@@ -1,0 +1,254 @@
+@import "tailwindcss";
+
+/* =============================================
+   LIGHT MODE (default)
+   ============================================= */
+:root {
+  color-scheme: light;
+
+  /* Core backgrounds */
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --surface-subtle: #f8fafc;
+  --surface-overlay: rgba(255, 255, 255, 0.92);
+
+  /* Text */
+  --foreground: #0f172a;
+  --foreground-soft: #475569;
+  --foreground-muted: #64748b;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-soft: rgba(226, 232, 240, 0.9);
+
+  /* Accent */
+  --accent: #10b981;
+  --accent-strong: #059669;
+  --accent-subtle: rgba(16, 185, 129, 0.1);
+
+  /* Status */
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  /* Shadows */
+  --shadow-soft: 0 20px 40px -24px rgba(15, 23, 42, 0.12);
+  --shadow-medium: 0 24px 70px -40px rgba(15, 23, 42, 0.16);
+  --shadow-card: 0 20px 40px -24px rgba(15, 23, 42, 0.12);
+
+  /* Navbar */
+  --navbar-bg: rgba(255, 255, 255, 0.92);
+  --navbar-border: rgba(226, 232, 240, 0.9);
+
+  /* Card */
+  --card-bg: #ffffff;
+  --card-border: rgba(226, 232, 240, 0.9);
+
+  /* Input */
+  --input-bg: #ffffff;
+  --input-border: rgba(226, 232, 240, 0.9);
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+
+  /* Dropdown / Popover */
+  --popover-bg: #ffffff;
+  --popover-border: rgba(226, 232, 240, 0.9);
+  --popover-text: #0f172a;
+
+  /* Body gradient overlay */
+  --body-gradient-from: #ffffff;
+  --body-gradient-accent: rgba(16, 185, 129, 0.09);
+  --body-gradient-secondary: rgba(148, 163, 184, 0.13);
+
+  /* Status color tokens (light mode) */
+  --color-red-bg: rgba(254, 242, 242, 0.95);
+  --color-red-border: rgba(254, 202, 202, 0.9);
+  --color-red-icon-bg: #fee2e2;
+  --color-red-icon: #dc2626;
+  --color-emerald-bg: rgba(240, 253, 244, 0.95);
+  --color-emerald-border: rgba(167, 243, 208, 0.9);
+  --color-emerald-icon-bg: #d1fae5;
+  --color-emerald-icon: #059669;
+}
+
+/* =============================================
+   DARK MODE
+   ============================================= */
+.dark {
+  color-scheme: dark;
+
+  /* Core backgrounds */
+  --background: #071117;
+  --surface: #0f1d27;
+  --surface-muted: #09151d;
+  --surface-subtle: #0b1720;
+  --surface-overlay: rgba(9, 21, 29, 0.95);
+
+  /* Text */
+  --foreground: #e5eef0;
+  --foreground-soft: #94a3b8;
+  --foreground-muted: #64748b;
+
+  /* Borders */
+  --border: #1c3340;
+  --border-soft: rgba(28, 51, 64, 0.8);
+
+  /* Accent */
+  --accent: #10b981;
+  --accent-strong: #10b981;
+  --accent-subtle: rgba(16, 185, 129, 0.12);
+
+  /* Status */
+  --danger: #ef4444;
+  --warning: #f59e0b;
+
+  /* Shadows */
+  --shadow-soft: 0 24px 60px -32px rgba(2, 6, 23, 0.85);
+  --shadow-medium: 0 28px 80px -36px rgba(2, 6, 23, 0.92);
+  --shadow-card: 0 24px 60px -32px rgba(2, 6, 23, 0.85);
+
+  /* Navbar */
+  --navbar-bg: rgba(15, 29, 39, 0.75);
+  --navbar-border: rgba(28, 51, 64, 0.7);
+
+  /* Card */
+  --card-bg: rgba(15, 29, 39, 0.75);
+  --card-border: rgba(28, 51, 64, 0.8);
+
+  /* Input */
+  --input-bg: rgba(15, 29, 39, 0.7);
+  --input-border: rgba(28, 51, 64, 0.9);
+  --input-text: #e5eef0;
+  --input-placeholder: #475569;
+
+  /* Dropdown / Popover */
+  --popover-bg: rgba(9, 21, 29, 0.97);
+  --popover-border: rgba(28, 51, 64, 0.9);
+  --popover-text: #e5eef0;
+
+  /* Body gradient overlay */
+  --body-gradient-from: var(--surface-muted);
+  --body-gradient-accent: rgba(16, 185, 129, 0.07);
+  --body-gradient-secondary: rgba(2, 6, 23, 0.4);
+
+  /* Status color tokens (dark mode) */
+  --color-red-bg: rgba(239, 68, 68, 0.10);
+  --color-red-border: rgba(239, 68, 68, 0.20);
+  --color-red-icon-bg: rgba(239, 68, 68, 0.15);
+  --color-red-icon: #fca5a5;
+  --color-emerald-bg: rgba(16, 185, 129, 0.10);
+  --color-emerald-border: rgba(16, 185, 129, 0.20);
+  --color-emerald-icon-bg: rgba(16, 185, 129, 0.15);
+  --color-emerald-icon: #6ee7b7;
+}
+
+
+/* =============================================
+   TAILWIND THEME TOKENS
+   ============================================= */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* =============================================
+   BASE STYLES
+   ============================================= */
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at top, var(--body-gradient-accent), transparent 24%),
+    radial-gradient(circle at 82% 10%, var(--body-gradient-secondary), transparent 18%),
+    linear-gradient(180deg, var(--body-gradient-from) 0%, var(--background) 100%);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  border-color: var(--border);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--foreground);
+}
+
+p, span, label, th, td, input, button, select {
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--foreground);
+}
+
+/* =============================================
+   COMPONENT UTILITY CLASSES
+   Gunakan class ini daripada dark: prefix di Tailwind
+   agar theme otomatis tanpa harus hardcode dark:bg-*
+   ============================================= */
+
+/* Surface / Card */
+.themed-card {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+  color: var(--foreground);
+}
+
+/* Navbar */
+.themed-navbar {
+  background-color: var(--navbar-bg);
+  border-color: var(--navbar-border);
+}
+
+/* Input */
+.themed-input {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+.themed-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* Popover / Dropdown */
+.themed-popover {
+  background-color: var(--popover-bg);
+  border-color: var(--popover-border);
+  color: var(--popover-text);
+}
+
+/* Muted surface */
+.themed-surface-muted {
+  background-color: var(--surface-muted);
+}
+
+/* Smooth transitions on all interactive UI elements */
+.themed-transition {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}

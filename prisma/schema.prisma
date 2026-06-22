@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model StoreProfile {
+  id              String   @id @default(uuid())
+  storeName       String
+  ownerName       String?
+  address         String?
+  phoneNumber     String?
+  whatsappNumber  String?
+  logoUrl         String?
+  receiptFooter   String?
+  defaultTax      Float?   @default(0)
+  defaultDiscount Float?   @default(0)
+  businessType    String?  @default("Sembako")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("store_profiles")
+}
+
+
+model Product {
+  id              String         @id @default(cuid())
+  name            String
+  categoryId      String?
+  purchasePrice   Float?
+  sellingPricePerKg Float
+  weightPerPack   Float          @default(1)
+  stockPack       Int            @default(0)
+  unit            String?        @default("pack")
+  supplier        String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  category        Category?      @relation(fields: [categoryId], references: [id])
+  transactionItems TransactionItem[]
+  stockLogs        StockLog[]
+
+  @@map("products")
+}
+
+model Transaction {
+  id           String         @id @default(cuid())
+  total        Float
+  paymentMethod String        // cash, qris
+  paidAmount   Float
+  changeAmount Float          @default(0)
+  createdAt    DateTime       @default(now())
+
+  items        TransactionItem[]
+
+  @@map("transactions")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   @unique
+  priority  String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isRead, createdAt])
+  @@map("notifications")
+}
+
+model TransactionItem {
+  id            String @id @default(cuid())
+  transactionId String
+  productId     String
+  qtyPack       Int
+  totalWeightKg Float
+  pricePerKg    Float
+  subtotal      Float
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@map("transaction_items")
+}
+
+model StockLog {
+  id        String   @id @default(cuid())
+  productId String
+  type      String   // IN, OUT
+  qty       Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("stock_logs")
+}
+
+
