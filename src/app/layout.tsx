@@ -2,6 +2,7 @@ import "./globals.css"
 import Navbar from "@/components/layout/navbar"
 import { SidebarProvider } from "@/components/layout/sidebar-provider"
 import { Toaster } from "sonner"
+import { ChatWidget } from "@/components/chat/chat-widget"
 
 export default function RootLayout({
   children,
@@ -15,6 +16,8 @@ export default function RootLayout({
           <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
             <Navbar />
             <main>{children}</main>
+
+            <ChatWidget />
 
             <Toaster
               position="top-right"

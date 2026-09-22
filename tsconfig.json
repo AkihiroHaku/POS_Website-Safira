@@ -35,11 +35,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    ".next-build-verify/types/**/*.ts",
-    ".next-build-verify/dev/types/**/*.ts",
-    ".next-build-verify-notifications/types/**/*.ts",
-    ".next-build-verify-notifications/dev/types/**/*.ts"
+    "**/*.mts"
   ],
   "exclude": [
     "node_modules"
