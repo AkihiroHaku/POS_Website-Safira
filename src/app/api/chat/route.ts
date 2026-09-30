@@ -267,58 +267,73 @@ async function callGeminiApi(
   history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }>,
   userMessage: string
 ): Promise<string> {
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
-
+  const models = ['gemini-3.1-flash-lite', 'gemini-flash-lite-latest']
+  
+  // Convert history to Gemini format (role: 'user' | 'model')
   const contents = [
-    ...history.slice(-8).map((h) => ({
-      role: h.role === 'user' ? 'user' : 'model',
+    ...history.slice(-6).map((h) => ({
+      role: h.role === 'assistant' ? 'model' : h.role,
       parts: [{ text: h.content }],
     })),
-    {
-      role: 'user',
-      parts: [{ text: userMessage }],
-    },
+    { role: 'user', parts: [{ text: userMessage }] },
   ]
 
   let lastError: Error | null = null
 
   for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }],
-          },
+          system_instruction: { parts: [{ text: systemPrompt }] },
           contents,
           generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 1000,
+            temperature: 0.4,
+            maxOutputTokens: 600,
           },
         }),
+        signal: controller.signal,
       })
+
+      if (response.status === 429) {
+        throw new Error('429: Rate limit tercapai.')
+      }
+
+      // If model has temporary high demand (503), try next fallback model
+      if (response.status === 503 && models.indexOf(model) < models.length - 1) {
+        console.warn(`Gemini model ${model} returned 503 (high demand), falling back...`)
+        continue
+      }
 
       if (!response.ok) {
         const errorBody = await response.text()
-        console.warn(`Gemini model ${model} failed with status ${response.status}:`, errorBody)
-        lastError = new Error(`HTTP ${response.status}: ${errorBody}`)
-        continue
+        throw new Error(`HTTP ${response.status}: ${errorBody}`)
       }
 
       const data = await response.json()
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (text && typeof text === 'string') {
+      if (text && typeof text === 'string' && text.trim()) {
         return text.trim()
       }
+
+      throw new Error('Gemini tidak mengembalikan respons yang valid.')
     } catch (err) {
-      console.warn(`Gemini model ${model} request threw error:`, err)
       lastError = err instanceof Error ? err : new Error(String(err))
+      if (models.indexOf(model) < models.length - 1 && lastError.message.includes('503')) {
+        continue
+      }
+      throw lastError
+    } finally {
+      clearTimeout(timeout)
     }
   }
 
-  throw lastError ?? new Error('Semua model Gemini tidak dapat diakses saat ini.')
+  throw lastError ?? new Error('Gagal menghubungi Gemini AI.')
 }
 
 export async function POST(request: NextRequest) {
@@ -336,12 +351,12 @@ export async function POST(request: NextRequest) {
     const { message, history = [] } = parsed.data
     const apiKey = process.env.GEMINI_API_KEY?.trim()
 
-    if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey === 'your_api_key_here') {
+    if (!apiKey || apiKey === 'your_api_key_here') {
       return NextResponse.json({
         reply:
-          'Halo! Fitur AI Chatbot Kasir Toko Safira membutuhkan Google Gemini API Key.\n\n' +
-          'Silakan tambahkan `GEMINI_API_KEY=AIzaSy...` di file `.env` proyek Anda.\n' +
-          'Anda dapat memperoleh API Key secara gratis di Google AI Studio (https://aistudio.google.com/apikey).',
+          'Halo! Fitur AI Chatbot membutuhkan Gemini API Key.\n\n' +
+          'Tambahkan `GEMINI_API_KEY=...` di file `.env`.\n' +
+          'Dapatkan gratis di https://aistudio.google.com/apikey',
       })
     }
 
@@ -351,27 +366,24 @@ export async function POST(request: NextRequest) {
     try {
       const reply = await callGeminiApi(apiKey, systemPrompt, history, message)
       return NextResponse.json({ reply })
-    } catch (geminiError: unknown) {
-      console.error('Gemini API execution error:', geminiError)
-      const errMessage = geminiError instanceof Error ? geminiError.message : String(geminiError)
+    } catch (aiError: unknown) {
+      console.error('Gemini API error:', aiError)
+      const errMessage = aiError instanceof Error ? aiError.message : String(aiError)
 
-      if (errMessage.includes('API_KEY_INVALID') || errMessage.includes('403')) {
+      if (errMessage.includes('400') && errMessage.includes('API_KEY')) {
         return NextResponse.json({
-          reply:
-            '⚠️ API Key Gemini yang Anda gunakan tampaknya tidak valid atau tidak memiliki izin akses. Harap periksa kembali `GEMINI_API_KEY` di file `.env`.',
+          reply: '⚠️ Gemini API Key tidak valid. Periksa kembali `GEMINI_API_KEY` di file `.env`.',
         })
       }
 
-      if (errMessage.includes('RESOURCE_EXHAUSTED') || errMessage.includes('429')) {
+      if (errMessage.includes('429')) {
         return NextResponse.json({
-          reply:
-            '⏳ Kuota permintaan Gemini API sedang penuh atau mencapai limit. Silakan tunggu beberapa saat lagi sebelum mencoba kembali.',
+          reply: '⏳ Rate limit Gemini tercapai. Tunggu beberapa detik lalu coba lagi.',
         })
       }
 
       return NextResponse.json({
-        reply:
-          'Maaf, terjadi kendala saat menghubungi layanan AI. Silakan coba lagi beberapa saat lagi.',
+        reply: 'Maaf, terjadi kendala saat menghubungi Gemini AI. Coba lagi beberapa saat lagi.',
       })
     }
   } catch (error) {
@@ -382,3 +394,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+

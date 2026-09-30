@@ -3,26 +3,33 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { createTransactionNotifications, ensureAutoNotifications } from '@/lib/notifications'
 
-const checkoutSchema = z.object({
-  cart: z
-    .array(
-      z.object({
-        product: z.object({
-          id: z.string(),
-          sellingPricePerKg: z.number().nonnegative(),
-          weightPerPack: z.number().positive(),
-          stockPack: z.number().nonnegative(),
-        }),
-        qtyPack: z.number().int().positive(),
+const itemSchema = z
+  .object({
+    product: z
+      .object({
+        id: z.string(),
+        sellingPricePerKg: z.number().nonnegative().optional(),
+        weightPerPack: z.number().positive().optional(),
+        stockPack: z.number().nonnegative().optional(),
       })
-    )
-    .min(1, 'Keranjang tidak boleh kosong'),
+      .optional(),
+    id: z.string().optional(),
+    productId: z.string().optional(),
+    qtyPack: z.number().int().positive(),
+  })
+  .refine((item) => !!(item.product?.id || item.productId || item.id), {
+    message: 'ID produk (product.id, productId, atau id) wajib disertakan',
+  })
+
+const checkoutSchema = z.object({
+  cart: z.array(itemSchema).min(1, 'Keranjang tidak boleh kosong'),
   paidAmount: z.number().nonnegative(),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const parsed = checkoutSchema.safeParse(await request.json())
+    const body = await request.json()
+    const parsed = checkoutSchema.safeParse(body)
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -33,7 +40,10 @@ export async function POST(request: NextRequest) {
 
     const { cart, paidAmount } = parsed.data
 
-    const productIds = cart.map((item) => item.product.id)
+    const getProductId = (item: (typeof cart)[number]) =>
+      (item.product?.id || item.productId || item.id)!
+
+    const productIds = cart.map(getProductId)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
     })
@@ -43,10 +53,11 @@ export async function POST(request: NextRequest) {
     let total = 0
 
     for (const item of cart) {
-      const product = productMap.get(item.product.id)
+      const pId = getProductId(item)
+      const product = productMap.get(pId)
       if (!product) {
         return NextResponse.json(
-          { error: `Produk tidak ditemukan: ${item.product.id}` },
+          { error: `Produk tidak ditemukan: ${pId}` },
           { status: 400 }
         )
       }
@@ -82,7 +93,8 @@ export async function POST(request: NextRequest) {
       })
 
       const createItems = cart.map((item) => {
-        const product = productMap.get(item.product.id)!
+        const pId = getProductId(item)
+        const product = productMap.get(pId)!
         const totalWeightKg = item.qtyPack * product.weightPerPack
         const subtotal = totalWeightKg * product.sellingPricePerKg
 
@@ -99,7 +111,8 @@ export async function POST(request: NextRequest) {
       })
 
       const updateStocks = cart.map((item) => {
-        const product = productMap.get(item.product.id)!
+        const pId = getProductId(item)
+        const product = productMap.get(pId)!
         return tx.product.update({
           where: { id: product.id },
           data: { stockPack: product.stockPack - item.qtyPack },
@@ -116,7 +129,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, transactionId: transaction.id })
   } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 500 })
+    console.error('Checkout error:', error)
+    return NextResponse.json(
+      {
+        error: 'Checkout failed',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    )
   }
 }
